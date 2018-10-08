@@ -1,0 +1,221 @@
+---
+title: "Exam 2"
+author: "Ariana Fairbanks"
+date: "10/4/2018"
+output:
+    html_notebook:
+        toc: yes
+        toc_float: yes
+---
+!-- Please don't mess with the next few lines! -->
+<style>h5{font-size:2em;color:#0000FF}h6{font-size:1.5em;color:#0000FF}div.answer{margin-left:5%;border:1px solid #1E90FF;border-left-width:10px;padding:25px} div.summary{background-color:rgba(30,144,255,0.1);border:3px double #0000FF;padding:25px}</style><p style="color:#ffffff">`r options(scipen = 999);intToUtf8(c(49,46,48))`</p>
+<!-- Please don't mess with the previous few lines! -->
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+
+Load Packages
+
+The data set birthwt is loaded from MASS package and the mosaic, gmodels and brom packages are uploaded also.
+
+```{r}
+library(mosaic)
+library(MASS)
+library(gmodels)
+library(broom)
+```
+
+Set the seed so that our results are reproducible
+
+```{r}
+set.seed(1234)
+
+```
+
+Explore the dataset birthwt
+
+``` 
+str(birthwt)
+```
+
+Problem 1 (30 points)
+
+Using the birthwt dataset, look at the baby's weight variable.
+
+### a) Build a histogram for the baby's weight variable.
+
+```{r}
+ggplot(birthwt, aes(x = bwt)) +
+    geom_histogram(binwidth = 200, boundary = 10)
+
+```
+
+
+### b) Build a QQ-plot for the baby's weight variable.
+
+```{r}
+ggplot(birthwt, aes(sample = bwt)) +
+    geom_qq()
+
+```
+
+
+### c) Compare the histogram and the QQ-plot graphs. Does the weight of the baby follow a normal model?
+
+
+<div class = "summary">
+
+The birth weight of the children seems to follow the normal model.
+
+</div>
+
+
+Problem 2 (30 points)
+
+A premature baby weight is considered to be around of 2500 grams. A very premature baby weight is bellow 1500 grams. Given that the mean of baby's weights is 3369 and the standard deviation is 567 grams (in USA), and considering that the weights follow a nearly normal distribution,
+
+
+
+### a) Find the percentage of the babies that were born very premature.
+
+```{r}
+pdist("norm", q = 1500, mean = 3369, sd = 567, plot = FALSE)
+
+```
+
+
+<div class = "summary">
+
+We would expect the percentage of children with a very premature weight to be around .05% based on the curve.
+
+</div>
+
+
+
+### b) Find the percentage of the babies that were born premature.
+
+
+
+```{r}
+diff(pdist("norm", q = c(1500, 2500), mean = 3369, sd = 567, plot = FALSE))
+```
+
+
+<div class = "summary">
+
+If a premature weight is considered to be a weight at or below 2500g and above 1500g, we would expect the percentage of children with a premature weight to be around 6.21% based on the curve.
+
+</div>
+
+
+###c) What is the cuttoff baby's weight value for the heaviest 10% of the babies?
+
+```{r}
+qdist("norm", p = 0.90, mean = 3369, sd = 567, plot = FALSE)
+```
+
+
+
+<div class = "summary">
+
+We would expect the cutoff weight for the heaviest 10% of the children to be around 4095.64 grams based on the curve.
+
+</div>
+
+
+
+### d) What are the cutoff values for the middle 60% of the baby weights?
+
+```{r}
+qdist("norm", p = c(0.2, 0.8), mean = 3369, sd = 567, plot = FALSE)
+```
+
+
+<div class = "summary">
+
+Based on the curve we would expect the cutoff values for the middle 60% of the weights to be around 2891.801g and 3846.199g.
+
+</div>
+
+
+
+
+Problem 3 (40 points)
+
+The percent of pregnant women in USA that were smoking decreased at 10% in 2014. Consider that we have our sample of pregnant women in birthwt dataset.We want to check how well this proportion is described by our sample birthw.
+
+
+### a) Choose smoke variable and create a factor variable and a data frame.
+
+```{r}
+smoke <- factor(birthwt$smoke, levels = c(1, 0), labels = c("Yes", "No"))
+smoke_df <- data.frame(smoke)
+```
+
+
+### b) Create a proportion frquency table to visualize the proportion of smoking pregnant women.
+
+```{r}
+tally(~ smoke, data = smoke_df, margins = TRUE, format = "percent")
+```
+
+
+### c) Identify the sample and a reasonable population of interest.
+ 
+<div class = "summary">
+
+The sample is of 189 pregnant women from the Baystate Medical Center in 1986. Our population could be said to be all pregnant women, assuming that these women are representative of all pregnant women, which they may not be.
+
+</div>
+
+### d) Check the conditions to see if we can use the normal model in case we want to calculate a 95% confidence interval for the proportion of smoking pregnant women in USA.Use the dataset bithwt and the variable smoke.
+
+
+<div class = "summary">
+
+
+  Random
+        It is uncertain, but we hope that the sample is random.
+    10%
+        We can say with some degree of confidence that there have been and currently are far more than 189 pregnant women.
+    Success/failure
+        There are 74 sucesses and 115 failures in the sample population, both of which are more than 10.
+
+
+
+</div>
+
+### e) Calculate a 95% confidence interval for the prportion of smoking pregnant women in birthwt dataset.
+
+```{r}
+program <- prop.test(~ smoke, data = smoke_df, success = "Yes")
+program_tidy <- tidy(program)
+#program_tidy
+program_tidy$conf.low
+program_tidy$conf.high
+```
+
+<div class = "summary">
+
+The confidence interval has a low value of `r program_tidy$conf.low` and a high value of `r program_tidy$conf.high`.
+
+</div>
+
+### f) Interpret the confidence interval you calculated above.
+
+
+<div class = "summary">
+
+We are 95% certain that the number of pregnant women who smoke is between `r 100 * program_tidy$conf.low`% and `r 100 * program_tidy$conf.high`%.
+
+</div>
+
+
+
+
