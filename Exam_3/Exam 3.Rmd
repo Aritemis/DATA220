@@ -1,0 +1,382 @@
+---
+title: "Exam 3"
+output:
+    html_notebook:
+        toc: yes
+        toc_float: yes
+---
+!-- Please don't mess with the next few lines! -->
+<style>h5{font-size:2em;color:#0000FF}h6{font-size:1.5em;color:#0000FF}div.answer{margin-left:5%;border:1px solid #1E90FF;border-left-width:10px;padding:25px} div.summary{background-color:rgba(30,144,255,0.1);border:3px double #0000FF;padding:25px}</style><p style="color:#ffffff">`r options(scipen = 999);intToUtf8(c(49,46,48))`</p>
+<!-- Please don't mess with the previous few lines! -->
+
+
+This is the R Markdown outline for running inference, both a hypothesis test and a confidence interval.
+
+## Problem 1 (50 points)
+
+Some heart transplant candidates have already had a prior surgery. Use the variable `prior` in the `heartTr` data set from openintro library to determine if less than 50% of patients didn't havd a prior surgery. (To be clear, you are being asked to perform a one-sided test.) Assume that sample of patients was randomly selected.
+
+Conduct a inferential statistical analysis by following the steps below.This means that after you conducted a hypothesis test, you will have to calculate a confidence interval of the patients who didn't have a prior surgery. Use the variable 'prior' in the data set 'heartTr'
+## Load Packages
+
+We load the standard `mosaic` package as well as the `openintro` package for the `full.body.scan` data. The `gmodels` package gives us nice contingency tables. The `broom` package gives us tidy output.
+
+```{r, message = FALSE, warning = FALSE}
+library(openintro)
+library(gmodels)
+library(broom)
+library(mosaic)
+library(MASS)
+```
+
+
+## Exploratory data analysis
+
+### Use data documentaton (help files, code books, Google, etc.), the str command, and other summary functions to understand the data.
+
+```{r}
+str(heartTr)
+```
+
+### Prepare the data for analysis. [Not always necessary.]
+
+```{r}
+## Add code here to prepare the data for analysis.
+```
+
+### Make tables or plots to explore the data visually.
+
+```{r}
+tally(~ prior, data = heartTr, margins = TRUE)
+```
+```{r}
+tally(~ prior, data = heartTr, margins = TRUE, format = "percent")
+```
+
+
+## Hypotheses
+
+### Identify the sample (or samples) and a reasonable population (or populations) of interest.
+
+<div class = "summary">
+
+The sample is 103 people from the Stanford University Heart Transplant Study. Assuming that our sample is representative, our population of interest would likely be all heart transplant recipients.
+
+</div>
+
+<div class = "summary">
+### Express the null and alternative hypotheses as contextually meaningful full sentences.
+
+
+
+$H_0$: At least 50% of heart transplant patients have had a prior transplant.
+
+$H_A$: Fewer than 50% of heart transplant patients have had a prior transplant.
+
+</div>
+
+<div class = "summary">
+
+
+### Express the null and alternative hypotheses in symbols.
+
+
+$H_0: p = .5$
+
+$H_A: p < .5$
+
+</div>
+
+## Model
+
+### Identify the sampling distribution model.
+
+
+### Check the relevant conditions to ensure that model assumptions are met.
+
+<div class = "summary">
+
+
+    Random
+        We have been told to assume that the sample is random. Hopefully that is the case.
+    10%
+        103 patients are definitely less than 10% of all heart transplant recipients.
+    Success/failure
+        Assuming the null, we expect a 50/50 split between patients who have and haven't had prior surgery. 50% of 103 is 51.5, which is more than 10.
+
+
+</div>
+
+
+
+## Mechanics
+
+### Compute the test statistic.
+
+```{r}
+prior_test <- binom.test(heartTr$prior, p = 0.5, success = "yes")
+prior_test_tidy <- tidy(prior_test)
+prior_test_tidy$estimate
+```
+
+### Plot the null distribution.
+
+```{r}
+SE <- sqrt(0.5*(1 - 0.5)/103)
+z <- (prior_test_tidy$estimate - 0.5)/SE
+pdist("norm", q = z, invisible = TRUE)
+```
+
+### Calculate the P-value.
+
+```{r}
+P <- pdist("norm", q = z, plot = FALSE)
+P
+```
+The P-value is < .001. If at least 50% of heart transplant patients had recieved a prior surgery the chance of seeing data at least as extreme as this is less than .1%.
+
+## Conclusion
+
+### State the statistical conclusion.
+
+<div class = "summary">
+
+We reject the null hypothesis.
+
+</div>
+
+
+
+### State (but do not overstate) a contextually meaningful conclusion.
+
+<div class = "summary">
+
+There is sufficient evidence that fewer than 50% of heart transplant recipients have had a prior surgery.
+
+</div>
+
+
+
+### Identify the possibility of either a Type I or Type II error and state what making such an error means in the context of the hypotheses.
+
+<div class = "summary">
+
+The null was rejected, so there is a chance we made a Type I error. It is possible that the null is true and that more than 50% of the heart transplant patients have had a prior surgery and our sample was just flawed.
+
+</div>
+
+
+
+## Confidence interval
+
+### Conditions
+
+<div class = "summary">
+
+    Random
+        Same as hypothesis.
+    10%
+        Same as hypothesis.
+    Success/failure
+        In our sample there were 12 patients who had prior surgery and 91 who did not. Both are larger than 10.
+
+</div>
+
+
+
+### Calculation
+
+```{r}
+prior_test_tidy$conf.low
+```
+```{r}
+prior_test_tidy$conf.high
+```
+
+### Conclusion
+
+<div class = "summary">
+
+We are 95% confident that the true percentage of heart transplant recipients who had had a prior surgery is captured in the interval (6.1670977%, 19.4668704%).
+
+</div>
+
+
+
+##Problem 2 (50 points)
+
+## Research question
+
+We use a classic data set `cars` (this is a set in openintro package).These cars represent a random sample for models that were in both Consumer Reports and PACE Buying Guide. Only vehicles of type 'small', 'midsize', and 'large' were included.Assuming that this data set is representative of all cars from 1993, were there an equal number of cars 'small','midsize','large'?
+
+Conduct a chi-square goodness of fit test to test if the proportions of small, midsize and large cars was the same.Use the steps below.
+
+If you reject the null, run a post hoc analysis and comment on the cells that seem to be contributing the most to the discrepancy between observed and expected counts.(hint:use the residuals)
+
+## Load Packages
+
+We load the standard `mosaic` package as well as the `openintro` package for the `full.body.scan` data. The `gmodels` package gives us nice contingency tables. The `broom` package gives us tidy output.
+
+```{r, message = FALSE, warning = FALSE}
+library(openintro)
+library(gmodels)
+library(MASS)
+library(mosaic)
+```
+
+
+## Exploratory data analysis
+
+### Use data documentaton (help files, code books, Google, etc.), the str command, and other summary functions to understand the data.
+
+```{r}
+str(cars)
+```
+
+### Prepare the data for analysis. [Not always necessary.]
+
+```{r}
+## Add code here to prepare the data for analysis.
+```
+
+### Make tables or plots to explore the data visually.
+
+```{r}
+type_tally <- tally(~ type, data = cars)
+type_tally
+```
+
+
+## Hypotheses
+
+### Identify the sample (or samples) and a reasonable population (or populations) of interest.
+
+<div class = "summary">
+
+The sample is a subset of 54 cars from the Cars93 set in the MASS package. The population is all cars from 1993.
+
+</div>
+
+
+
+### Express the null and alternative hypotheses as contextually meaningful full sentences.
+
+<div class = "summary">
+
+$H_0$: In 1993, there were the same number of large, medium, and small cars.
+
+$H_A$: In 1993, there were not the same number of large, medium, and small cars.
+
+</div>
+
+
+
+
+
+### Express the null and alternative hypotheses in symbols.(you need to show at least the null hypothesis correctly)
+
+<div class = "summary">
+$H_0: Pl = Pm = Ps$
+</div>
+
+
+## Model
+
+### Identify the sampling distribution model.
+
+<div class = "summary">
+
+We will use a Chi-square model with two degrees of freedom.
+
+</div>
+
+
+### Check the relevant conditions to ensure that model assumptions are met.
+
+<div class = "summary">
+
+
+    Random
+        We do not know for sure if the cars data set is random or representative of our population. Hopefully it is.
+    10%
+        There were more than 540 cars in 1993.
+    Expected cell counts
+        We expect to see 18 values in each cell, which is more than 5.
+
+
+</div>
+
+
+
+
+## Mechanics
+
+### Compute the test statistic.
+
+```{r}
+type_test <- chisq.test(type_tally)
+type_test_tidy <- tidy(type_test)
+type_test_tidy$statistic
+```
+
+### Plot the null distribution.
+
+```{r}
+pdist("chisq", df = type_test_tidy$parameter,
+      q = type_test_tidy$statistic,
+      invisible = TRUE)
+```
+
+
+### Calculate the P-value.
+
+```{r}
+P2 <- 1 - pdist("chisq", df = type_test_tidy$parameter,
+                q = type_test_tidy$statistic,
+                plot = FALSE)
+P2
+```
+
+
+## Conclusion
+
+### State the statistical conclusion.
+
+<div class = "summary">
+
+We fail to reject the null.
+
+</div>
+
+
+
+### State (but do not overstate) a contextually meaningful conclusion.
+
+<div class = "summary">
+
+There is insufficient evidence that in 1974, there weren’t the same number of large, medium, and small cars.
+
+</div>
+
+
+
+### Identify the possibility of either a Type I or Type II error and state what making such an error means in the context of the hypotheses.
+
+<div class = "summary">
+
+We may have made a Type II error and there was a difference in the number of large, medium, and small cars, but we don't have enough evidence from our sample to prove it.
+
+</div>
+
+
+
+## Post hoc analysis; use this only if you reject H0.(use the residuals)
+
+If we rejected the null, we would look at the residuals to determine which cells were contributing the most to the chi-square statistic. 
+
+
+```{r}
+
+```
+
+If the overall test is not statistically significant, it does not make much sense to try to interpret any of these residuals. They are all too small to distinguish from chance variability.
