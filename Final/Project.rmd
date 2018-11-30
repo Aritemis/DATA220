@@ -1,0 +1,484 @@
+---
+title: "Data 220 Group 4"
+author: "Ariana Fairbanks, William Harvey, and Lienne Cupal"
+output:
+    html_notebook:
+        toc: yes
+        toc_float: yes
+---
+
+<!-- Formatting -->
+<style>h5{font-size:2em;color:#0000FF}h6{font-size:1.5em;color:#0000FF}div.answer{margin-left:5%;border:1px solid #1E90FF;border-left-width:10px;padding:25px} div.summary{background-color:rgba(30,144,255,0.1);border:3px double #0000FF;padding:25px}</style><p style="color:#ffffff">`r options(scipen = 999);intToUtf8(c(49,46,48))`</p>
+<!-- Formatting -->
+
+## Introduction
+
+The data set we chose was HELPrct, a clinical trial examining adult inpatients recruited from a detoxification unit. Subjects were adults who spoke Spanish or English and reported alcohol, heroin, or cocaine as their first or second drug of choice. The subjects either resided near a primary care clinic or were homeless. The subjects were interviewed regarding their baseline while in the detoxification unit and a follow-up interview was taken every six months for a period of two years.
+
+
+## Load Packages
+
+```{r, warning = FALSE, message=FALSE}
+library(mosaicData)
+library(broom)
+library(mosaic)
+library(openintro)
+library(reshape2)
+library(MASS)
+
+set.seed(1234)
+```
+## Exploratory data analysis
+
+```{r}
+str(HELPrct)
+```
+
+```{r}
+HELPrct
+```
+
+## a) Perform graphical analysis of multiple variables and draw conclusions using a histogram, a side by side boxplot, a bar plot, and a scatter plot.
+
+### Histogram
+
+```{r}
+ggplot(HELPrct, aes(x = age)) +
+geom_histogram(binwidth = 2, boundary = 10) + labs(title = "Adult Inpatients Recruited from Detoxification Unit", x = "Age of Patients (in years)")
+```
+
+The histogram depicts the age variable distribution as relatively symmetrical with a slight right skew indicated by the longer right tail. Outliers occur at 60 years old. The graph is uni-modal with one prominent peak between approximately 32 and 37 years old, with the highest concentration of observations culminating just above 50.
+
+### Side-by-side Boxplot
+
+We do a side-by-side boxplot in part D.
+
+This side-by-side boxplot compares the average number of drinks per day for males and females. Both plots are skewed, but the male boxplot has a slightly larger median, range, and interquartile range, as well as a few outliers.
+
+### Barplot
+
+```{r}
+par(las=1)
+counts <- table(HELPrct$substance)
+barplot(counts, main="Distrubution of Drugs", horiz=FALSE, names.arg=c("Alcohol", "Cocaine", "Heroin"), cex.names=1.0)
+```
+This bar plot shows the rates at which each of the drugs in question are abused. It tells us that alcohol (177) is the most commonly abused of these substances, followed by cocaine (152), then heroin (124) .
+
+### Scatter Plot
+
+```{r}
+plot(HELPrct$age, HELPrct$i1, main="Average Number of Drinks by Age",
+      xlab="Age", ylab="Average Number of Drinks", pch=19)
+abline(lm(HELPrct$i1~HELPrct$age), col="red")
+```
+
+This scatterplot shows a weak, positive, nonlinear association between age and the average number of alcoholic drinks had per day. There may be outliers in the data.
+
+## b) Ask and answer a question that can be answered with building a confidence interval for a parameter and draw conclusions.
+
+Part B is done at the end of part C.
+
+## c) Ask and answer a question that involves writing a hypothesis test on one or more categorical variables and draw conclusions.
+
+Is there a difference in the rate of occurrence of suicidal  thoughts in male and female inpatients?
+
+## Exploratory data analysis
+
+We already explored the data above.
+
+### Prepare the data for analysis.
+
+```{r}
+sex <- HELPrct$sex
+suicidal <- HELPrct$g1b
+
+suicidal_sex <- data.frame(suicidal, sex)
+```
+
+### Make tables or plots to explore the data visually.
+
+```{r}
+tally(suicidal ~ sex, data = suicidal_sex, margins = TRUE)
+```
+
+```{r}
+tally(suicidal ~ sex, data = suicidal_sex, margins = TRUE, format = "percent")
+```
+
+## Hypotheses
+
+### Identify the sample(s) and population(s) of interest.
+
+We have two samples. 107 female inpatients and 346 male inpatients recruited from a detoxification unit. This sample may be representative of all adult inpatients from detoxification units.
+
+### Express the null and alternative hypotheses.
+
+$H_{0}$: There is no difference in the occurrence of suicidal thoughts between male and female inpatients in detoxification units.
+$H_{A}$: There is a difference in the occurrence of suicidal thoughts between male and female inpatients in detoxification units.
+
+### Express the null and alternative hypotheses in symbols.
+
+$H_{0}: p_M - p_F = 0$
+$H_{0}: p_M - p_F \neq 0$
+
+## Model
+
+The sampling distribution model used is a normal model.  
+
+###Check Conditions
+Random:
+It is stated in the description of the HELPrct dataset that the samples have been randomly collected.
+10%:
+107 female patients and 346 male patients are less than 10% of all adult inpatients in detoxification units.
+Success/Failure:
+Checking the contingency table above, we have 43 successes and 64 failures for the females and 84 successes and 262 failures for the males. All of these are greater than 10.
+
+## Mechanics
+
+### Compute and report the test statistic.
+
+```{r}
+suicidal_sex_test <- prop.test(suicidal ~ sex, data = suicidal_sex)
+suicidal_sex_test_tidy <- tidy(suicidal_sex_test)
+suicidal_sex_test_tidy
+```
+
+```{r}
+SE_suicidal_sex <- sqrt(suicidal_sex_test_tidy$estimate1 *
+               (1 - suicidal_sex_test_tidy$estimate1)/107 +
+          suicidal_sex_test_tidy$estimate2 *
+               (1 - suicidal_sex_test_tidy$estimate2)/346)
+
+z_suicidal_sex <- (suicidal_sex_test_tidy$estimate1 - suicidal_sex_test_tidy$estimate2)/SE_suicidal_sex
+```
+The standard error is `r SE_suicidal_sex`. The z score is `r z_suicidal_sex`.
+
+### Plot the null distribution
+
+```{r}
+pdist("norm", q = c(-z_suicidal_sex, z_suicidal_sex), invisible = TRUE)
+```
+
+### Calculate and report the P-value.
+
+```{r}
+P_suicidal_sex <- 2 * pdist("norm", q = z_suicidal_sex, plot = FALSE)
+```
+
+The p value is `r suicidal_sex_test$p.value`. If there were really no difference in the occurrence of suicidal thoughts for male and female inpatients in detoxification units then there is a `r 100 * suicidal_sex_test$p.value`% chance of seeing data this extreme.
+
+## Conclusion
+
+### State the statistical conclusion.
+
+We reject the null hypothesis.
+
+### State a contextually meaningful conclusion.
+There is sufficient evidence to support that there is a difference in the rates of suicidal thoughts between male and female inpatients in detoxification units.
+
+### Identify the possibility of either a Type I or Type II error and state what making such an error means in the context of the hypotheses.
+
+As we rejected the null hypothesis there is the possibility that we have committed a Type I error. Perhaps there is actually no difference in the occurrence of suicidal thoughts for male and female inpatients in detoxification units and our data was not representative.
+
+## Confidence interval
+
+### Check the relevant conditions to ensure that model assumptions are met.
+
+The conditions have already been checked above.
+
+### Calculate the confidence interval
+
+```{r}
+suicidal_sex_test_tidy$conf.low
+```
+
+```{r}
+suicidal_sex_test_tidy$conf.high
+```
+
+### State a contextually meaningful interpretation
+
+We are 95% confident that the true difference in the rate at which men and women in detoxification units experience suicidal thoughts is captured in the interval (`r suicidal_sex_test_tidy$conf.low`, `r suicidal_sex_test_tidy$conf.high`).
+
+The confidence interval does not contain the null value of zero, which means that zero is not a plausible value for the actual difference in the occurrence of suicidal thoughts between men and women in detoxification units. This supports our rejection of the null hypothesis.
+
+
+
+## d) Ask and answer a question that involves writing a hypothesis test on one or more numerical variables and draw conclusions.
+
+Is there a difference in the average number of drinks (in standardized units) consumed per day in the 30 days prior to participating in the study by male and female inpatients in detoxification units?
+
+## Exploratory data analysis
+
+The data was already explored at the top.
+
+### Prepare the data for analysis.
+
+```{r}
+drinks <- HELPrct$i1
+
+drinks_sex <- data.frame(drinks, sex)
+```
+
+### Make tables or plots to explore the data visually.
+
+```{r}
+ggplot(drinks_sex, aes(y = drinks, x = sex)) +
+    geom_boxplot()
+```
+
+```{r}
+ggplot(drinks_sex, aes(x = drinks)) +
+    geom_histogram(binwidth = 10, boundary = 1) +
+    facet_grid(sex ~ .)
+```
+
+## Hypotheses
+
+### Identify the sample(s) and population(s) of interest.
+
+We have two samples. 107 female inpatients and 346 male inpatients recruited from a detoxification unit. This sample may be representative of all adult inpatients from detoxification units.
+
+### Express the null and alternative hypotheses as contextually meaningful full sentences.
+
+$H_{0}:$ There is no difference in the average number of drinks for male and female inpatients.
+
+$H_{A}:$ There is a difference in the average number of drinks for male and female inpatients.
+
+### Express the null and alternative hypotheses in symbols (when possible).
+
+$H_{0}: \mu M - \mu F = 0$
+
+$H_{A}: \mu M - \mu F \neq 0$
+
+## Model
+
+### Identify the sampling distribution model.
+
+We will use a t model with 189.95 degrees of freedom.
+
+### Check the relevant conditions to ensure that model assumptions are met.
+
+Random:
+It is stated in the description of the HELPrct dataset that the samples have been randomly collected.
+
+10%:
+107 female patients and 346 male patients are less than 10% of all adult inpatients in detoxification units.
+
+Nearly Normal:
+The sample sizes are large enough to meet this condition.
+
+   
+## Mechanics
+
+### Compute and report the test statistic.
+
+```{r}
+drinks_test <- t.test(drinks ~ sex, data = drinks_sex)
+drinks_test_tidy <- tidy(drinks_test)
+drinks_test
+```
+
+```{r}
+td <- drinks_test_tidy$statistic
+```
+
+The test statistic is `r td`.
+
+### Plot the null distribution.
+
+```{r}
+pdist("t", df = drinks_test_tidy$parameter,
+      q = c(-td, td),
+      invisible = TRUE)
+```
+
+### Calculate and report the P-value.
+
+```{r}
+Pd <- drinks_test_tidy$p.value
+Pd
+```
+
+The P value is `r Pd`. If there were no difference in the average number of drinks consumed per day over 30 days by male and female inpatients then there is a `r 100 * Pd`% chance of seeing data this extreme.
+
+## Conclusion
+
+### State the statistical conclusion.
+
+We fail to reject the null.
+
+### State a contextually meaningful conclusion.
+
+There is insufficient evidence to show that there is a difference in the average number of drinks consumed per day for 30 days prior to participating in the study for male and female inpatients.
+
+### Identify the possibility of either a Type I or Type II error and state what making such an error means in the context of the hypotheses.
+
+There is a possibility of a Type II error. Perhaps there really is a difference in the average number of drinks consumed by male and female inpatients that wasn't reflected in our data.
+
+
+
+
+
+## e) Ask a question that involves a correlation or regression analysis and perform the corresponding hypothesis test. Check conditions and clearly state conclusions.
+
+Is there a correlation between the inpatients' measure of depression and their mental component score?
+
+## Exploratory data analysis
+
+The data was already explored at the top.
+
+### Prepare the data for analysis
+
+```{r}
+# Not necessary
+```
+
+### Make tables or plots to explore the data visually.
+
+```{r}
+ggplot(HELPrct, aes(y = cesd, x = mcs)) +
+    geom_point()
+```
+
+```{r}
+ggplot(HELPrct, aes(y = cesd, x = mcs)) +
+    geom_point() +
+    geom_smooth(method = "lm")
+```
+
+```{r}
+cesd_mcs_lm <- lm(cesd ~ mcs, data = HELPrct)
+cesd_mcs_tidy <- tidy(cesd_mcs_lm, conf.int = TRUE)
+cesd_mcs_tidy
+```
+
+```{r}
+cesd_mcs_aug <- augment(cesd_mcs_lm)
+cesd_mcs_aug
+```
+
+```{r}
+ggplot(cesd_mcs_aug, aes(x = .std.resid)) +
+    geom_histogram(binwidth = 0.5, boundary = 0)
+```
+
+```{r}
+ggplot(cesd_mcs_aug, aes(sample = .std.resid)) +
+    geom_qq()
+
+```
+
+```{r}
+ggplot(cesd_mcs_aug, aes(y = .std.resid, x = mcs)) +
+    geom_point() +
+    geom_hline(yintercept = 0)
+```
+
+
+## Hypotheses
+
+### Identify the sample(s) and population(s) of interest.
+
+We the sample is 453 inpatients recruited from a detoxification unit. The population is all adult inpatients from detoxification units.
+
+### Express the null and alternative hypotheses as contextually meaningful full sentences.
+
+{$H_0$}: There is no correlation between the measure of depression and the mental component score
+{$H_A$}: There is a correlation between the measure of depression and the mental component score
+
+### Express the null and alternative hypotheses in symbols.
+
+$H_{0}: \rho = 0$
+$H_{A}: \rho \neq 0$
+
+## Model
+
+### Identify the sampling distribution model.
+
+The sampling distribution model used is a t distribution with 451 degrees of freedom.
+
+### Check the relevant conditions to ensure that model assumptions are met.
+
+Random:
+It is stated in the description that the subjects have been randomly selected.
+
+10%:
+453 adult inpatients recruited from detoxification unit is less than 10% of all adult inpatients recruited from detoxification units.
+
+Linear association:
+The scatterplot shows a reasonably linear pattern.
+
+Outliers:
+There are no significant outliers in the scatterplot. There are a few dots here and there that are a little far from the main cloud, but that would heavily influence the graph's overall pattern, particularly because of the large sample size.
+
+
+## Mechanics
+
+### Compute and report the test statistic.
+
+```{r}
+HELPrct_test <- cor.test(cesd ~ mcs, data = HELPrct)
+HELPrct_test_tidy <- tidy(HELPrct_test)
+HELPrct_test_tidy
+```
+
+```{r}
+t.stat <- HELPrct_test_tidy$statistic
+t.stat
+```
+
+The test statistic is `r t.stat`.
+
+### Plot the null distribution.
+
+```{r}
+pdist("t", df = HELPrct_test_tidy$parameter,
+      q = c(-t.stat, t.stat),
+      invisible = TRUE)
+```
+
+### Calculate and report the P-value.
+
+```{r}
+Pval <- HELPrct_test_tidy$p.value
+Pval
+```
+
+The P-value is less than 0.001. If there was truly no correlation between measure of depression and mental component, then the chance of seeing data at least as extreme as above would be less than 0.1%.
+
+## Conclusion
+
+### State the statistical conclusion.
+
+We reject the null hypothesis.
+
+### State a contextually meaningful conclusion.
+
+The data provides sufficient evidence that there is a correlation between measure of depression and mental component score.
+
+### Identify the possibility of either a Type I or Type II error and state what making such an error means in the context of the hypotheses.
+
+Since we rejected the null, we have possibly committed a Type 1 error. Perhaps there correlation between the measure of depression and mental component scores is 0 and we were wrong to reject the null, but the data does not provide evidence for this.
+
+## Confidence interval
+
+### Check the relevant conditions to ensure that model assumptions are met.
+
+The conditions have already been checked above.
+
+### Calculate the confidence interval
+
+```{r}
+HELPrct_test_tidy$conf.low
+```
+
+```{r}
+HELPrct_test_tidy$conf.high
+```
+
+### State a contextually meaningful interpretation
+
+We are 95% confident that the true correlation between measure of depression and mental component score is captured within the interval (`r HELPrct_test_tidy$conf.low`, `r HELPrct_test_tidy$conf.high`).
+
+The confidence interval does not contain the null value of zero, which means that zero is not a plausible value for the correlation between measure of depression and mental component score. This supports our rejection of the null hypothesis.
